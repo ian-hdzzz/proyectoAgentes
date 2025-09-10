@@ -59,8 +59,21 @@ def get_agents():
     return jsonify({"agents": agents})
 
 # 🌫️ Endpoint de humo (dinámico)
-    
-# Endpoint para avanzar la simulación y generar fuegos/humo aleatorios
+
+@app.route("/api/gamestate", methods=["GET"])
+def get_game_state():
+    return jsonify({
+        "gameState": {
+            "phase": model.phase,
+            "currentAgent": model.current_agent_index,
+            "damageCount": model.damage_count,
+            "roundCount": model.round_count,
+            "gameOver": model.game_over,
+            "gameWon": model.game_won,
+            "endReason": model.end_reason if hasattr(model, 'end_reason') else ""
+        }
+    })
+
 @app.route("/api/step", methods=["POST"])
 def step_model():
     model.step()

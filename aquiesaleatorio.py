@@ -311,7 +311,7 @@ class FireRescueModel(Model):
     self.current_agent_index = 0
     self.agent_list = []
     self.round_count = 0
-    self.phase = "AGENT_TURN"
+    self.phase = "AGENT"
 
     self.game_over = False
     self.game_won = False
@@ -550,9 +550,9 @@ class FireRescueModel(Model):
   def agent_turn(self):
     current_agent = self.get_current_agent()
     if current_agent is None:
-      self.phase = "FIRE_SPREAD"
-      return
-
+        self.phase = "FIRE"
+        return
+        
     print(f"\n-- Turn: Agent {current_agent.unique_id} ({current_agent.role.value if current_agent.role else 'No Role'}) ---")
     current_agent.update_knockout()
     current_agent.reset_ap()
@@ -565,7 +565,7 @@ class FireRescueModel(Model):
 
     current_agent.check_knockout()
     self.current_agent_index = (self.current_agent_index + 1) % len(self.agent_list)
-    self.phase = "FIRE_SPREAD"
+    self.phase = "FIRE"
     self.step_count += 1
 
   def fire_spread_phase(self):
@@ -579,7 +579,7 @@ class FireRescueModel(Model):
       print(f"¡{victims_lost} víctima(s) y {alarms_destroyed} falsa(s) alarma(s) perdidas por fuego!")
       self.assign_roles()
     self.step_count += 1
-    self.phase = "AGENT_TURN"
+    self.phase = "AGENT"
     print(f"Damage count: {self.damage_count}")
 
   def _get_adjacent_cells(self, x, y):
@@ -667,9 +667,9 @@ class FireRescueModel(Model):
     return self.game_over
 
   def step(self):
-    if self.phase == "AGENT_TURN":
+    if self.phase == "AGENT":
       self.agent_turn()
-    elif self.phase == "FIRE_SPREAD":
+    elif self.phase == "FIRE":
       self.fire_spread_phase()
 
 
