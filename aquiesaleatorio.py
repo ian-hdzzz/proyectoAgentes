@@ -352,11 +352,10 @@ class FireRescueModel(Model):
 
   def _place_initial_pois(self):
     valid_positions = self._get_valid_positions_for_poi()
-
+    
     # Selecciona 2 victim y 1 false_alarm
-    victims = [poi for poi in self.all_pois if poi.type == POIType.VICTIM][:2]
-    false_alarms = [poi for poi in self.all_pois if poi.type == POIType.FALSE][:1]
-    initial_pois = victims + false_alarms
+
+    initial_pois = random.sample(self.all_pois, 3)
     selected_positions = random.sample(valid_positions, 3)
 
     for poi, (x, y) in zip(initial_pois, selected_positions):

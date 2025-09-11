@@ -1,5 +1,8 @@
 from flask import Flask, jsonify, request
-from aquiesaleatorio import model, FireState, FireRescueModel, grid_layout  # Importa el modelo, clase y layout
+from aquiesaleatorio import (
+    model, FireState, FireRescueModel, grid_layout,
+    POIType  # Agregamos POIType a las importaciones
+)
 
 app = Flask(__name__)
 
@@ -19,13 +22,58 @@ def get_smoke():
 def get_pois():
     pois = []
     for poi in model.active_pois:
-        pois.append({
+        poi_data = {
             "x": poi.x,
             "y": poi.y,
             "type": poi.type.value,
             "revealed": poi.revealed
+        }
+        print(f"Enviando POI: {poi_data}")  # Debug print
+        pois.append(poi_data)
+    response = {"pois": pois}
+    print(f"Respuesta completa: {response}")  # Debug print
+    return jsonify(response)
+
+# Endpoint para revelar un POI
+@app.route("/api/reveal_poi", methods=["POST"])
+def reveal_poi():
+    try:
+        data = request.form
+        x = int(data['x'])
+        y = int(data['y'])
+        
+        # Buscar el POI en esa posición
+        poi = model._get_poi_at_position(x, y)
+        if poi is None:
+            return jsonify({
+                'success': False,
+                'message': 'No hay POI en esta posición'
+            })
+            
+        if poi.revealed:
+            return jsonify({
+                'success': False,
+                'message': 'POI ya fue revelado'
+            })
+            
+        # Revelar el POI
+        model.reveal_poi(x, y)
+        
+        # Preparar respuesta
+        response = {
+            'success': True,
+            'poiType': 'victim' if poi.type == POIType.VICTIM else 'false_alarm',
+            'wasRevealed': poi.revealed,
+            'message': 'POI revelado exitosamente'
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
         })
-    return jsonify({"pois": pois})
 
 # Endpoint para reiniciar el modelo y comenzar desde el estado inicial
 @app.route("/api/reset", methods=["POST"])
