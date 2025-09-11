@@ -35,6 +35,87 @@ def get_pois():
     return jsonify(response)
 
 # Endpoint para revelar un POI
+@app.route("/api/check_poi_in_fire", methods=["GET"])
+def check_poi_in_fire():
+    try:
+        x = int(request.args.get('x'))
+        y = int(request.args.get('y'))
+        
+        print(f"\nVerificando POI en fuego en ({x}, {y})")
+        print("\nEstado actual de POIs:")
+        for poi in model.active_pois:
+            print(f"- POI en ({poi.x}, {poi.y}): tipo={poi.type.value}, revelado={poi.revealed}")
+        
+        # Buscar el POI en esa posición
+        poi = model._get_poi_at_position(x, y)
+        if poi is None:
+            print(f"No se encontró POI en ({x}, {y})")
+            return jsonify({
+                'success': False,
+                'message': 'No hay POI en esta posición'
+            })
+            
+        # Si hay un POI y hay fuego, debemos revelarlo
+        if model._get_fire_state(x, y) == FireState.FIRE:
+            print(f"¡Fuego encontrado en POI! Tipo: {poi.type.value}")
+            poi.revealed = True  # Marcar como revelado
+            
+            # Si es una víctima, agregarla a la lista de perdidas
+            if poi.type == POIType.VICTIM:
+                if poi not in model.lost_victims:
+                    model.lost_victims.append(poi)
+            
+            # Remover el POI actual y generar uno nuevo
+            if poi in model.active_pois:
+                model.active_pois.remove(poi)
+            
+            print("Generando nuevo POI...")
+            new_poi = model.place_new_poi()
+            
+            return jsonify({
+                'success': True,
+                'poiType': poi.type.value,
+                'message': 'POI destruido por fuego',
+                'wasVictim': poi.type == POIType.VICTIM
+            })
+        
+        # Si hay un POI pero no hay fuego
+        print(f"POI encontrado en ({x}, {y}) pero no hay fuego")
+        return jsonify({
+            'success': True,
+            'poiType': poi.type.value,
+            'message': 'POI presente pero no hay fuego',
+            'wasVictim': False
+        })
+        
+        # Verificar si hay fuego en la posición
+        if model._get_fire_state(x, y) == FireState.FIRE:
+            poi_type = poi.type.value
+            model.active_pois.remove(poi)
+            if poi.type == POIType.VICTIM:
+                model.lost_victims.append(poi)
+            
+            # Generar un nuevo POI
+            new_poi = model.place_new_poi()
+            
+            return jsonify({
+                'success': True,
+                'poiType': poi_type,
+                'message': 'POI destruido por fuego',
+                'wasVictim': poi_type == 'victim'
+            })
+        
+        return jsonify({
+            'success': False,
+            'message': 'No hay fuego en esta posición'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        })
+
 @app.route("/api/reveal_poi", methods=["POST"])
 def reveal_poi():
     try:
@@ -42,14 +123,21 @@ def reveal_poi():
         x = int(data['x'])
         y = int(data['y'])
         
+        print(f"\nIntento de revelar POI en ({x}, {y})")
+        print("Estado actual de POIs:")
+        for poi in model.active_pois:
+            print(f"- POI en ({poi.x}, {poi.y}): tipo={poi.type.value}, revelado={poi.revealed}")
+        
         # Buscar el POI en esa posición
         poi = model._get_poi_at_position(x, y)
         if poi is None:
+            print(f"No se encontró POI en ({x}, {y})")
             return jsonify({
                 'success': False,
                 'message': 'No hay POI en esta posición'
             })
             
+        print(f"POI encontrado: tipo={poi.type.value}, revelado={poi.revealed}")
         if poi.revealed:
             return jsonify({
                 'success': False,
@@ -57,16 +145,19 @@ def reveal_poi():
             })
             
         # Revelar el POI
-        model.reveal_poi(x, y)
+        print(f"Revelando POI en ({x}, {y})")
+        was_revealed = model.reveal_poi(x, y)
+        print(f"POI revelado: {was_revealed}")
         
         # Preparar respuesta
         response = {
             'success': True,
-            'poiType': 'victim' if poi.type == POIType.VICTIM else 'false_alarm',
+            'poiType': poi.type.value,
             'wasRevealed': poi.revealed,
             'message': 'POI revelado exitosamente'
         }
         
+        print(f"Enviando respuesta: {response}")
         return jsonify(response)
         
     except Exception as e:

@@ -367,9 +367,14 @@ class FireRescueModel(Model):
       self.all_pois.remove(poi)
 
   def _get_poi_at_position(self, x, y):
+    print(f"\nBuscando POI en posición ({x}, {y})")
+    print(f"POIs activos:")
     for poi in self.active_pois:
+      print(f"- POI en ({poi.x}, {poi.y})")
       if poi.x == x and poi.y == y:
+        print(f"¡POI encontrado! Tipo: {poi.type.value}")
         return poi
+    print("No se encontró ningún POI en esa posición")
     return None
 
   def place_new_poi(self):
