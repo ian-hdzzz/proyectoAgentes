@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
-from aquiesaleatorio import (
+from agentModel import (
     model, FireState, FireRescueModel, grid_layout,
-    POIType  # Agregamos POIType a las importaciones
+    POIType  
 )
 
 app = Flask(__name__)
@@ -28,10 +28,10 @@ def get_pois():
             "type": poi.type.value,
             "revealed": poi.revealed
         }
-        print(f"Enviando POI: {poi_data}")  # Debug print
+        print(f"Enviando POI: {poi_data}")  
         pois.append(poi_data)
     response = {"pois": pois}
-    print(f"Respuesta completa: {response}")  # Debug print
+    print(f"Respuesta completa: {response}")  
     return jsonify(response)
 
 # Endpoint para revelar un POI
@@ -86,28 +86,6 @@ def check_poi_in_fire():
             'poiType': poi.type.value,
             'message': 'POI presente pero no hay fuego',
             'wasVictim': False
-        })
-        
-        # Verificar si hay fuego en la posición
-        if model._get_fire_state(x, y) == FireState.FIRE:
-            poi_type = poi.type.value
-            model.active_pois.remove(poi)
-            if poi.type == POIType.VICTIM:
-                model.lost_victims.append(poi)
-            
-            # Generar un nuevo POI
-            new_poi = model.place_new_poi()
-            
-            return jsonify({
-                'success': True,
-                'poiType': poi_type,
-                'message': 'POI destruido por fuego',
-                'wasVictim': poi_type == 'victim'
-            })
-        
-        return jsonify({
-            'success': False,
-            'message': 'No hay fuego en esta posición'
         })
         
     except Exception as e:
@@ -173,7 +151,7 @@ def reset_model():
     model = FireRescueModel(grid_layout)
     return jsonify({"message": "Modelo reiniciado"})
 
-# 🔥 Endpoint de fuegos (ahora dinámico)
+# Endpoint de fuegos (ahora dinámico)
 @app.route("/api/fires", methods=["GET"])
 def get_fires():
     fires = []
@@ -183,7 +161,7 @@ def get_fires():
                 fires.append({"row": y, "col": x})
     return jsonify({"fires": fires})
 
-# 🧑‍🚒 Endpoint de agentes (dinámico)
+# Endpoint de agentes (dinámico)
 @app.route("/api/agents", methods=["GET"])
 def get_agents():
     agents = []
@@ -197,7 +175,7 @@ def get_agents():
         })
     return jsonify({"agents": agents})
 
-# 🌫️ Endpoint de humo (dinámico)
+#  Endpoint de humo (dinámico)
 
 @app.route("/api/gamestate", methods=["GET"])
 def get_game_state():
@@ -240,8 +218,8 @@ def step_model():
 
 
 if __name__ == "__main__":
-    print("🚀 Iniciando servidor de debug...")
-    print("📡 Endpoints disponibles:")
+    print("Iniciando servidor de debug...")
+    print("Endpoints disponibles:")
     print("   GET /api/fires")
     print("   GET /api/smoke")
     app.run(host="0.0.0.0", port=3690, debug=True)
